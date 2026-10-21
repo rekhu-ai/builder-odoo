@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.rekhu_builder</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="inside">
+                <app data-string="Rekhu Builder" string="Rekhu Builder" name="rekhu_builder" groups="base.group_system">
+                    <block title="Connection" name="rekhu_builder_connection">
+                        <setting string="Key" help="From the Connection tab of your Odoo project in your Rekhu account (agk_…). The builder then works on this database from the project chat.">
+                            <field name="rekhu_builder_key" password="True" placeholder="agk_…"/>
+                            <div class="mt8">
+                                <button name="action_rekhu_builder_connect" type="object" string="Connect" class="btn-primary" icon="fa-plug"/>
+                            </div>
+                        </setting>
+                        <setting string="How Rekhu reaches this server" help="Direct: Rekhu calls this server, which needs a public https address. Relay: for a laptop, Docker or a server behind a firewall; keep the listener running (odoo rekhu_listen -d &lt;database&gt;), nothing has to be opened inbound. Automatic picks one from the address of this server.">
+                            <field name="rekhu_builder_mode"/>
+                        </setting>
+                    </block>
+                    <block title="What it may change" name="rekhu_builder_writes">
+                        <setting string="This database is" help="Local: a developer's own copy. Staging: a copy for testing; every change waits for your yes in the chat. Production: the live database; the builder reads and proposes only, unless changes are allowed.">
+                            <field name="rekhu_builder_environment"/>
+                            <div class="mt8" invisible="rekhu_builder_environment != 'production'">
+                                <field name="rekhu_builder_production_writes" class="oe_inline"/> <label for="rekhu_builder_production_writes" class="o_light_label"/>
+                            </div>
+                        </setting>
+                        <setting string="Changes to the modules" help="Only the custom modules are ever changed, never Odoo's own or Enterprise. Automatic: on a git branch when the modules are in git, otherwise in the files with a backup. Every run can be undone.">
+                            <field name="rekhu_builder_writes"/>
+                        </setting>
+                        <setting string="Folders it may write" help="Custom addons folders, separated by commas. Empty: every custom folder of the addons path that this server can write.">
+                            <field name="rekhu_builder_addons" placeholder="/mnt/extra-addons"/>
+                        </setting>
+                        <setting string="Now">
+                            <field name="rekhu_builder_status" readonly="1" class="text-muted"/>
+                        </setting>
+                    </block>
+                    <block title="Advanced" name="rekhu_builder_advanced">
+                        <setting string="Rekhu address" help="Leave as it is, unless Rekhu asks you to change it.">
+                            <field name="rekhu_builder_platform"/>
+                        </setting>
+                    </block>
+                </app>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
