@@ -277,6 +277,31 @@ def _manifest_text(m):
 
 # -- checking a module ----------------------------------------------------------------------------------------------
 
+# what one Odoo series refuses or no longer shows, often only in the browser: (since, before, file kind, pattern, what to do)
+VERSION_TRAPS = [
+    (19, None, '.xml', r't-name=["\']kanban-box["\']', 'Odoo 19 names the kanban card template t-name="card"; kanban-box is gone and the board fails in the browser'),
+    (19, None, '.xml', r'<search[\s\S]*?<group[^>]*>[\s\S]*?</search>', 'Odoo 19 takes no <group> in a search view: put the group-by filters straight in it'),
+    (19, None, '.py', r'^\s*_sql_constraints\s*=', 'Odoo 19 has no _sql_constraints: use models.Constraint(\'…\', \'message\') attributes'),
+    (18, None, '.xml', r'<tree[\s>]', 'Odoo 18 and 19 call list views <list>, not <tree>'),
+    (18, None, '.xml', r'view_mode["\']?>[^<]*\btree\b', 'Odoo 18 and 19 name the list view mode "list", not "tree"'),
+    (17, None, '.xml', r'\sattrs=|\sstates=', 'Odoo 17 and later have no attrs or states: write invisible, readonly and required as Python expressions'),
+    (None, 18, '.xml', r'<list[\s>]', 'Odoo 17 calls list views <tree>, not <list>'),
+    (None, 18, '.xml', r'<chatter\s*/>', 'Odoo 17 has no <chatter/>: use a div class="oe_chatter" with the mail fields'),
+]
+
+
+def _traps(path, text):
+    major = state.odoo_major()
+    out = []
+    for since, before, kind, pattern, advice in VERSION_TRAPS:
+        if (since and major < since) or (before and major >= before) or not path.endswith(kind):
+            continue
+        m = re.search(pattern, text, re.M)
+        if m:
+            out.append('%s, line %d: %s' % (guard.relative(path), text.count('\n', 0, m.start()) + 1, advice))
+    return out
+
+
 def check_module(env, i, ctx):
     """Everything that would stop the module from loading, found before it is loaded."""
     name = str(i.get('module') or '')
@@ -302,6 +327,9 @@ def check_module(env, i, ctx):
                 problem = code.check(full)
                 if problem:
                     problems.append('%s: %s' % (guard.relative(full), problem))
+                elif f.endswith(('.py', '.xml')):
+                    with open(full, encoding='utf-8', errors='replace') as fh:
+                        problems += _traps(full, fh.read())
             if f.endswith('.py'):
                 with open(full, encoding='utf-8', errors='replace') as fh:
                     text = fh.read()
