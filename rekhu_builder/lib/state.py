@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from odoo import release
 
-VERSION = '1.0.1'
+VERSION = '1.0.2'
 KEY = re.compile(r'^agk_([a-z0-9-]+)_([a-z0-9-]+)_[A-Za-z0-9_-]+$')
 PARAM = 'rekhu_builder.'
 ROUTE = '/rekhu/builder/run'
