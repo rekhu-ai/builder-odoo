@@ -6,6 +6,7 @@ import ast
 import inspect
 import os
 import sys
+import time
 
 from odoo import release
 from odoo.tools import config
@@ -138,16 +139,12 @@ def restart_needed():
     return False
 
 
+LOADED = time.time()
+
+
 def _started():
-    try:
-        with open('/proc/self/stat', encoding='ascii') as f:
-            ticks = int(f.read().split(')')[1].split()[19])
-        with open('/proc/uptime', encoding='ascii') as f:
-            uptime = float(f.read().split()[0])
-        import time  # noqa: PLC0415
-        return time.time() - uptime + ticks / os.sysconf('SC_CLK_TCK')
-    except (OSError, ValueError, IndexError):
-        return float('inf')
+    """When this process loaded the module's Python: the moment code changes after it are not running."""
+    return LOADED
 
 
 def module_list(env, i, ctx):

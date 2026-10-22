@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- The listener restarts itself only after an upgrade or an undo that loaded new Python, no longer after every look at the database.
+- Whether the server must restart for new Python is judged from when this process loaded the module, so it clears once the new code runs.
+
 ## 1.0.0
 
 The first release of Rekhu Builder for Odoo 17, 18 and 19.
