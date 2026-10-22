@@ -280,7 +280,6 @@ def _manifest_text(m):
 # what one Odoo series refuses or no longer shows, often only in the browser: (since, before, file kind, pattern, what to do)
 VERSION_TRAPS = [
     (19, None, '.xml', r't-name=["\']kanban-box["\']', 'Odoo 19 names the kanban card template t-name="card"; kanban-box is gone and the board fails in the browser'),
-    (19, None, '.xml', r'<search[\s\S]*?<group[^>]*>[\s\S]*?</search>', 'Odoo 19 takes no <group> in a search view: put the group-by filters straight in it'),
     (19, None, '.py', r'^\s*_sql_constraints\s*=', 'Odoo 19 has no _sql_constraints: use models.Constraint(\'…\', \'message\') attributes'),
     (18, None, '.xml', r'<tree[\s>]', 'Odoo 18 and 19 call list views <list>, not <tree>'),
     (18, None, '.xml', r'view_mode["\']?>[^<]*\btree\b', 'Odoo 18 and 19 name the list view mode "list", not "tree"'),
@@ -290,9 +289,47 @@ VERSION_TRAPS = [
 ]
 
 
+def _models_in(text):
+    """The models a Python file defines: classes on models.Model or TransientModel with a _name, read from the code
+    itself (not with a pattern, which a long class without a _name makes very slow)."""
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return set()
+    out = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ClassDef):
+            continue
+        bases = {b.attr for b in node.bases if isinstance(b, ast.Attribute)}
+        if not bases & {'Model', 'TransientModel'}:
+            continue
+        for item in node.body:
+            if isinstance(item, ast.Assign) and any(isinstance(t, ast.Name) and t.id == '_name' for t in item.targets) \
+                    and isinstance(item.value, ast.Constant) and isinstance(item.value.value, str):
+                out.add(item.value.value)
+    return out
+
+
+def _search_groups(text):
+    """The line of the first <group> inside a <search> view, or None."""
+    from lxml import etree  # noqa: PLC0415
+    try:
+        root = etree.fromstring(text.encode())
+    except etree.XMLSyntaxError:
+        return None
+    for group in root.iter('group'):
+        if any(a.tag == 'search' for a in group.iterancestors()):
+            return group.sourceline
+    return None
+
+
 def _traps(path, text):
     major = state.odoo_major()
     out = []
+    if major >= 19 and path.endswith('.xml'):
+        line = _search_groups(text)
+        if line:
+            out.append('%s, line %d: Odoo 19 takes no <group> in a search view: put the group-by filters straight in it' % (guard.relative(path), line))
     for since, before, kind, pattern, advice in VERSION_TRAPS:
         if (since and major < since) or (before and major >= before) or not path.endswith(kind):
             continue
@@ -334,9 +371,7 @@ def check_module(env, i, ctx):
                 with open(full, encoding='utf-8', errors='replace') as fh:
                     text = fh.read()
                 # every model with a _name of its own, abstract ones aside, needs access rights (transient ones too)
-                for cls, model in re.findall(r'^class \w+\(models\.(\w+)\):\s*\n(?:[ \t]+.*\n|\s*\n)*?[ \t]+_name\s*=\s*[\'"]([a-z0-9_.]+)[\'"]', text, re.M):
-                    if cls != 'AbstractModel':
-                        py_models.add(model)
+                py_models |= _models_in(text)
             if f == 'ir.model.access.csv':
                 with open(full, encoding='utf-8') as fh:
                     acl_models |= {r.split(',')[2].strip().split('.')[-1] for r in fh.read().splitlines()[1:] if r.count(',') >= 3}
