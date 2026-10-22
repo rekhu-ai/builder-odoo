@@ -16,6 +16,8 @@ import time
 from odoo.cli import Command
 
 _logger = logging.getLogger('rekhu_builder.listen')
+# the longest a tool may take; the platform waits 110 seconds per call, tests and upgrades answer before that
+TOOL_SECONDS = 280
 
 
 class RekhuListen(Command):
@@ -80,7 +82,16 @@ class RekhuListen(Command):
                     continue
                 tool, started = str(call.get('tool') or ''), time.time()
                 say('  → %s' % tool)
-                result = tools.run(registry, tool, call.get('input') or {}, {'run': call.get('run'), 'user': call.get('user')}, dbname=dbname, broken=broken)
+                # a tool runs in a thread of its own: one that never comes back must not stop the listener for good
+                box = {}
+                worker = threading.Thread(target=lambda: box.update(result=tools.run(registry, tool, call.get('input') or {}, {'run': call.get('run'), 'user': call.get('user')}, dbname=dbname, broken=broken)), daemon=True)
+                worker.start()
+                worker.join(TOOL_SECONDS)
+                if worker.is_alive():
+                    env_do(lambda env: platform.answer(env, call['id'], {'error': '%s did not finish within %d seconds and was stopped; the listener restarted. Narrow it down and try again.' % (tool, TOOL_SECONDS)}))
+                    say('  ← %s stopped after %d s · restarting' % (tool, TOOL_SECONDS))
+                    os.execv(sys.executable, [sys.executable, *sys.argv])
+                result = box.get('result') or {'error': '%s ended without a result' % tool}
                 env_do(lambda env: platform.answer(env, call['id'], result))
                 # an upgrade made a new registry, or a repair made the database load again: the next calls use it
                 registry, now_broken = load()
