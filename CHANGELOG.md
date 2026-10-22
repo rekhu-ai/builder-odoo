@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3
+
+- module-check reads which models a module defines from the Python itself; a long class that extends a model without a _name of its own no longer makes it hang.
+- The listener stops a tool that does not finish within 280 seconds, answers with the reason and starts afresh, so one stuck call never leaves the database unreachable.
+
 ## 1.0.2
 
 - module-check reports what the running Odoo version refuses, with the line: a kanban card named kanban-box on 19, <tree> on 18 and 19, attrs and states since 17, _sql_constraints and a <group> in a search view on 19, <list> and <chatter/> on 17. Several of these break only in the browser, where no test sees them.
