@@ -8,7 +8,7 @@
             <xpath expr="//form" position="inside">
                 <app data-string="Rekhu Builder" string="Rekhu Builder" name="rekhu_builder" groups="base.group_system">
                     <block title="Connection" name="rekhu_builder_connection">
-                        <setting string="Key" help="From the Connection tab of your Odoo project in your Rekhu account (agk_…). The builder then works on this database from the project chat.">
+                        <setting string="Key" help="From the Connection tab of your Odoo project in your Rekhu account (agk_…). The builder then works on this database from the project chat. No Rekhu account yet? Create one at https://rekhu.com/register?ref=builder-odoo: it starts with $10 credit, no card needed.">
                             <field name="rekhu_builder_key" password="True" placeholder="agk_…"/>
                             <div class="mt8">
                                 <button name="action_rekhu_builder_connect" type="object" string="Connect" class="btn-primary" icon="fa-plug"/>

@@ -15,7 +15,7 @@ class Refused(Exception):
 def _headers(env):
     key = state.key(env)
     if not key:
-        raise Refused('The Rekhu key is missing or not a Rekhu key (agk_…). Set it under Settings → Rekhu Builder.', 400)
+        raise Refused('The Rekhu key is missing or not a Rekhu key (agk_…). Set it under Settings → Rekhu Builder. No Rekhu account yet? Create one at https://rekhu.com/register?ref=builder-odoo: it starts with $10 credit, no card needed.', 400)
     company = env.company
     return {
         'content-type': 'application/json',
