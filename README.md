@@ -6,6 +6,8 @@ The AI agent for Odoo developers. Install this module on your development or sta
 [Rekhu](https://rekhu.com) account, and the agent in your project chat reads the database as it runs. It then designs,
 builds, tests and upgrades your custom modules, on a git branch of its own.
 
+> **Start free.** [Create a Rekhu account](https://rekhu.com/register?ref=builder-odoo) and get **$10 credit** to try it, no card needed. After that you top up from $10 under **Billing**: no subscription, and unused credit never expires. [rekhu.com](https://rekhu.com) · [Docs](https://rekhu.com/docs) · [Pricing](https://rekhu.com/pricing)
+
 - **Reads** the installed modules and where they come from, and every model with its fields and the module that added each. It also reads views and their inheritance, menus, access rights and record rules, scheduled actions and their failures, the server log, and the code.
 - **Designs models with you:** relations as a diagram, and how a field is used in the data before you change it (how many records have it set, its values, empty ones).
 - **Builds:** new modules from a description of their models, plus changes to existing custom modules: Python, XML views, security, data and migration scripts. Every file is checked as it is written.
@@ -17,7 +19,7 @@ Odoo 17, 18 and 19, Community and Enterprise. It doesn't work on Odoo Online, wh
 
 ## Install
 
-1. In your Rekhu account: **Projects → New project → Odoo**, then **Connection → Make a key** under Rekhu Builder.
+1. [Create a Rekhu account](https://rekhu.com/register?ref=builder-odoo) (it starts with $10 credit, no card needed), then **Projects → New project → Odoo**, then **Connection → Make a key** under Rekhu Builder.
 2. Put `rekhu_builder` in your addons path (or install it from the Odoo Apps store) and install **Rekhu Builder** from Apps.
 3. In Odoo open **Settings → Rekhu Builder**, paste the key, say what this database is (local, staging or production), and press **Connect**.
 
@@ -63,5 +65,5 @@ the builder can read them when Odoo logs to the terminal only.
 
 ## Licence
 
-Licensed, not sold: see LICENSE. Rekhu is a product and trade name of Charisma Design, the Netherlands.
+Licensed, not sold: see LICENSE.
 Questions: hello@rekhu.com

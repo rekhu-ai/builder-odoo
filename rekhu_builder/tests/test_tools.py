@@ -69,3 +69,17 @@ class TestTools(TransactionCase):
 
     def test_its_own_modules_are_not_upgraded(self):
         self.assertIn("Rekhu's own module", self.call('module-upgrade', {'module': 'rekhu_builder'})['error'])
+
+    def test_owl_templates_are_checked_for_globals(self):
+        from ..tools import modules
+        bad = ('<templates><t t-name="x"><span t-esc="Number(state.total)"/><i t-on-click="() =&gt; this.pick(parseInt(v))"/>'
+               '<b t-if="Math.max(a, b) &gt; 2" t-att-title="\'Number(x) is only text\'"/></t></templates>')
+        found = modules._owl_globals('/x/static/src/x.xml', bad)
+        self.assertEqual([f.split(' uses ')[1].split(',')[0] for f in found], ['Number', 'parseInt'])
+
+    def test_style_imports_with_a_semicolon_are_reported(self):
+        from ..tools import modules
+        found = modules._style_imports('/x/static/src/x.scss', "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600');\n.a { color: red; }")
+        self.assertEqual(len(found), 1)
+        self.assertIn('%3B', found[0])
+        self.assertEqual(modules._style_imports('/x/static/src/x.scss', '.a { color: red; }'), [])

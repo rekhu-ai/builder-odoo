@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.0.5
+
+- **Start free.** The README and the store page say how to begin: [create a Rekhu account](https://rekhu.com/register?ref=builder-odoo) and it starts with $10 credit, no card needed.
+- The key setting and the message for a missing key say where to get one, with a link to sign-up.
+
+## 1.0.4
+
+- module-check reads OWL templates too: a JavaScript global such as Number, String, JSON or parseInt in a template expression is reported with its line, since the screen would only fail in the browser ("ctx.Number is not a function").
+- module-check reports an @import of a web address in a module's styles: Odoo cuts it at its first semicolon (a Google Fonts address has several), which leaves the whole backend without styles.
+- tests-run lists the tests that were skipped and why (a browser tour skips quietly when the server has no Chrome), so a skipped tour is never reported as a passed one.
+- After an install or upgrade the compiled screen assets are rebuilt and every Odoo process forgets the old ones, so the next page load shows the new JavaScript, templates and styles without a restart.
+
 ## 1.0.3
 
 - module-check reads which models a module defines from the Python itself; a long class that extends a model without a _name of its own no longer makes it hang.
