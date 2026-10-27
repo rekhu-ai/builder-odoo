@@ -289,6 +289,51 @@ VERSION_TRAPS = [
 ]
 
 
+# JavaScript names an OWL template cannot use: OWL looks every other name up on the component, so Number(x) in a template
+# becomes this.Number(x) and the screen fails in the browser ("ctx.Number is not a function"). Math, Date, Array, Object,
+# console and window are the exceptions OWL allows.
+OWL_GLOBALS = ('Number', 'String', 'Boolean', 'JSON', 'parseInt', 'parseFloat', 'isNaN', 'isFinite', 'Intl', 'Symbol',
+               'Promise', 'encodeURIComponent', 'decodeURIComponent', 'setTimeout', 'setInterval', 'document', 'location',
+               'navigator', 'localStorage', 'sessionStorage', 'Map', 'Set', 'structuredClone')
+OWL_GLOBAL_USE = re.compile(r'(?<![\w.$])(%s)\s*[.(]' % '|'.join(OWL_GLOBALS))
+
+
+def _owl_globals(path, text):
+    """Template expressions in an OWL .xml file under static/ that call a JavaScript global the template cannot see."""
+    from lxml import etree  # noqa: PLC0415
+    try:
+        root = etree.fromstring(text.encode())
+    except etree.XMLSyntaxError:
+        return []
+    out = []
+    for node in root.iter():
+        if not isinstance(node.tag, str):
+            continue
+        for attr, value in node.attrib.items():
+            if not attr.startswith('t-') or attr in ('t-name', 't-inherit', 't-inherit-mode', 't-ref', 't-key'):
+                continue
+            # quoted text inside an expression is not code
+            code_only = re.sub(r"'[^']*'|\"[^\"]*\"|`[^`]*`", "''", value)
+            m = OWL_GLOBAL_USE.search(code_only)
+            if m:
+                out.append('%s, line %d: %s="%s" uses %s, which an OWL template cannot call (it becomes this.%s and the screen fails in the browser): compute it in the component and use the result' % (
+                    guard.relative(path), node.sourceline or 0, attr, guard.clip(value, 80), m.group(1), m.group(1)))
+    return out
+
+
+def _style_imports(path, text):
+    """An @import of a web address in a module's styles: Odoo moves it to the top of the whole bundle and cuts it at its
+    first semicolon, so an address with one (Google Fonts: wght@400;600) leaves an open url( and the browser drops
+    every style of the backend, not only the module's."""
+    out = []
+    for m in re.finditer(r'@import\s+url\(\s*["\']?(https?:[^"\')]*)', text):
+        advice = 'an @import of a web address in a module\'s styles is hoisted into every page\'s bundle'
+        if ';' in m.group(1):
+            advice = 'the address has a ";", where Odoo cuts the @import: the backend loses all its styles. Write the semicolons as %3B, or better, load the font with a <link> in a template or ship the font files in static/'
+        out.append('%s, line %d: %s' % (guard.relative(path), text.count('\n', 0, m.start()) + 1, advice))
+    return out
+
+
 def _models_in(text):
     """The models a Python file defines: classes on models.Model or TransientModel with a _name, read from the code
     itself (not with a pattern, which a long class without a _name makes very slow)."""
@@ -375,6 +420,18 @@ def check_module(env, i, ctx):
             if f == 'ir.model.access.csv':
                 with open(full, encoding='utf-8') as fh:
                     acl_models |= {r.split(',')[2].strip().split('.')[-1] for r in fh.read().splitlines()[1:] if r.count(',') >= 3}
+    # OWL templates and styles are only read by the browser, so their mistakes show nowhere else
+    static = os.path.join(root, 'static')
+    for folder, dirs, files in os.walk(static):
+        dirs[:] = [d for d in dirs if not guard.hidden(d) and d != 'lib']
+        for f in files:
+            full = os.path.join(folder, f)
+            if f.endswith('.xml'):
+                with open(full, encoding='utf-8', errors='replace') as fh:
+                    problems += _owl_globals(full, fh.read())
+            elif f.endswith(('.scss', '.css')):
+                with open(full, encoding='utf-8', errors='replace') as fh:
+                    problems += _style_imports(full, fh.read())
     # every folder with Python is imported by its parent's __init__.py
     for folder, dirs, files in os.walk(root):
         dirs[:] = [d for d in dirs if not guard.hidden(d) and d not in ('static', 'tests', 'migrations', 'cli')]
@@ -485,6 +542,7 @@ def upgrade(env, i, ctx):
         env.cr.rollback()
         _reset_states(env)
         return {'module': name, 'upgraded': False, 'error': guard.clip(_explain(error), 6000), 'next': 'fix it, then module-upgrade again'}
+    _refresh_assets(env)
     return {'module': name, 'upgraded': True, 'action': 'installed' if install else 'upgraded', 'seconds': round(time.time() - started, 1)}
 
 
@@ -505,11 +563,28 @@ def _upgrade_apart(env, name, install, started):
     failed = done.returncode != 0 or re.search(r' (ERROR|CRITICAL) ', out)
     if failed:
         _reset_states(env)
+    else:
+        _refresh_assets(env)
     dev = 'reload' in (config.get('dev_mode') or [])
     return {'module': name, 'upgraded': not failed, 'seconds': round(time.time() - started, 1), 'apart': True,
             'log': guard.clip('\n'.join(l for l in out.splitlines() if re.search(r' (WARNING|ERROR|CRITICAL) |Traceback|Error', l) or l.startswith(' ')), 8000) or None,
             'restart_needed': not dev and not failed,
             'next': None if failed else ('the server reloads by itself (--dev=reload)' if dev else 'restart the Odoo server so it runs the new Python')}
+
+
+def _refresh_assets(env):
+    """After an upgrade the browser must get the module's new JavaScript, templates and styles: the compiled bundles are
+    dropped and every Odoo process is told to forget the ones it holds, so the next page load builds them afresh."""
+    try:
+        if getattr(env, 'repair', False):
+            env.cr.execute("DELETE FROM ir_attachment WHERE url LIKE '/web/assets/%%'")
+            return
+        with env.registry.cursor() as cr:
+            cr.execute("DELETE FROM ir_attachment WHERE url LIKE '/web/assets/%%'")
+        env.registry.clear_cache('assets')
+        env.registry.signal_changes()
+    except Exception:  # noqa: BLE001 a stale bundle is a nuisance, never a reason to fail an upgrade that worked
+        pass
 
 
 def _reset_states(env):
@@ -624,6 +699,12 @@ def _job_state(folder, job):
         out.update(state='passed' if not failed and not errored and total else 'failed', tests=total, failed=failed, errors=errored)
     else:
         out.update(state='failed', tests=0, note='no test result in the log: the module did not load, or it has no tests for these tags')
+    # a skipped test is not a passed one: browser tours skip quietly when the server has no Chrome
+    skipped = re.findall(r' skipped (\S+)\s*:\s*(.+?)\s*$', log, re.M)
+    if skipped:
+        out['skipped'] = [{'test': t, 'reason': guard.clip(r, 200)} for t, r in skipped[:20]]
+        out['note'] = ('%d test(s) did not run (skipped), so they prove nothing: %s. Tell the developer which ones and why, '
+                       'and never report a screen as tested when its tour was skipped.') % (len(skipped), '; '.join(sorted({r for _, r in skipped}))[:300])
     if failures:
         out['failures'] = [guard.clip(f.strip(), 4000) for f in failures[:10]]
     elif errors and out['state'] == 'failed':
