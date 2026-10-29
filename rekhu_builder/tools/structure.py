@@ -107,7 +107,7 @@ def repair_context(env):
 def conventions(custom):
     """What the custom modules agree on, read from their manifests and folders: the builder follows it."""
     if not custom:
-        return 'no custom modules yet: use Odoo\'s own conventions (models/, views/, security/ir.model.access.csv, tests/, LGPL-3 or the licence the developer names)'
+        return 'no custom modules yet: use Odoo\'s own conventions (models/, views/, security/ir.model.access.csv, or security/ir.access.csv on Odoo 20, tests/, LGPL-3 or the licence the developer names)'
     licences, authors, tests, versions = {}, {}, 0, set()
     for c in custom[:40]:
         root = _module_path(c['name'])
@@ -226,7 +226,7 @@ def models(env, i, ctx):
         'table': model._table if not model._abstract else None,
         'abstract': model._abstract,
         'transient': model._transient,
-        'inherit': list(model._inherit) if isinstance(model._inherit, (list, tuple)) else ([model._inherit] if model._inherit else []),
+        'inherit': _parents(model),
         'inherits': dict(model._inherits),
         'rec_name': model._rec_name,
         'order': model._order,
@@ -346,6 +346,14 @@ def access(env, i, ctx):
         out['user'] = {'login': user.login, 'active': user.active, 'share': user.share, 'groups': sorted(groups.mapped('full_name'))}
     if i.get('model'):
         model_id = env['ir.model'].sudo()._get_id(i['model'])
+        if 'ir.access' in env:
+            # Odoo 20: one model for access rights and record rules; a row with a domain is a rule
+            acl = env['ir.access'].sudo().with_context(active_test=False).search([('model_id', '=', model_id)])
+            out['access'] = [{'name': a.name, 'xml_id': a.get_external_id().get(a.id) or None, 'group': a.group_id.full_name or 'everyone',
+                              'operation': a.operation, 'domain': a.domain or None, 'active': a.active} for a in acl]
+            if not acl and i['model'] in env and not env[i['model']]._abstract:
+                out['warning'] = 'this model has no access rights: only the superuser can use it, and Odoo logs a warning at start'
+            return out
         acl = env['ir.model.access'].sudo().with_context(active_test=False).search([('model_id', '=', model_id)])
         out['access'] = [{'name': a.name, 'xml_id': a.get_external_id().get(a.id) or None, 'group': a.group_id.full_name or 'everyone',
                           'read': a.perm_read, 'write': a.perm_write, 'create': a.perm_create, 'unlink': a.perm_unlink, 'active': a.active} for a in acl]
@@ -375,3 +383,19 @@ def crons(env, i, ctx):
         out.append(row)
     failing = [r for r in out if r.get('failure_count')]
     return {'crons': out, 'failing': len(failing)}
+
+
+def _parents(model):
+    """The models a model inherits from. Odoo 17 to 19 have _inherit on the model's class; Odoo 20 refuses it there and
+    keeps it, as _inherit__, on the classes the model was put together from."""
+    try:
+        own = model._inherit
+        return list(own) if isinstance(own, (list, tuple)) else ([own] if own else [])
+    except AttributeError:
+        names = []
+        for cls in type(model).__mro__:
+            value = cls.__dict__.get('_inherit__', cls.__dict__.get('_inherit'))
+            for parent in ([value] if isinstance(value, str) else value or ()):
+                if isinstance(parent, str) and parent not in names:
+                    names.append(parent)
+        return names

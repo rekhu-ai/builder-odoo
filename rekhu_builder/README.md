@@ -15,7 +15,7 @@ builds, tests and upgrades your custom modules, on a git branch of its own.
 - **Undoes:** every run can be rolled back. Files are restored, a module the run installed is uninstalled, and the repository goes back to the branch it started from.
 - **Sets up [Rekhu Assistant](https://apps.odoo.com/apps/modules/19.0/rekhu_assistant):** where it works, its help topics, and actions of your own.
 
-Odoo 17, 18 and 19, Community and Enterprise. It doesn't work on Odoo Online, which does not take custom modules.
+Odoo 17, 18, 19 and 20, Community and Enterprise. It doesn't work on Odoo Online, which does not take custom modules.
 
 ## Install
 

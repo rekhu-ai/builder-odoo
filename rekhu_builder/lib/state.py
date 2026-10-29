@@ -9,7 +9,9 @@ from urllib.parse import urlparse
 
 from odoo import release
 
-VERSION = '1.0.5'
+from . import params as settings
+
+VERSION = '1.0.6'
 KEY = re.compile(r'^agk_([a-z0-9-]+)_([a-z0-9-]+)_[A-Za-z0-9_-]+$')
 PARAM = 'rekhu_builder.'
 ROUTE = '/rekhu/builder/run'
@@ -17,7 +19,7 @@ ENVIRONMENTS = ('local', 'staging', 'production')
 
 
 def param(env, name, default=None):
-    return env['ir.config_parameter'].sudo().get_param(PARAM + name, default)
+    return settings.get(env, PARAM + name, default)
 
 
 def key(env):
@@ -31,7 +33,7 @@ def secret(env):
     value = param(env, 'secret')
     if not value:
         value = secrets.token_urlsafe(48)
-        env['ir.config_parameter'].sudo().set_param(PARAM + 'secret', value)
+        settings.put(env, PARAM + 'secret', value)
     return value
 
 
@@ -40,7 +42,7 @@ def platform(env):
 
 
 def base_url(env):
-    return (env['ir.config_parameter'].sudo().get_param('web.base.url') or '').rstrip('/')
+    return (settings.get(env, 'web.base.url') or '').rstrip('/')
 
 
 def environment(env):
