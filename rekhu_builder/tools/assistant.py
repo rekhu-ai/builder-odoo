@@ -3,6 +3,7 @@ developer's modules give it (methods marked with @tool) and the company's help t
 
 import inspect
 
+from ..lib import params as settings
 from ..lib.guard import Refusal
 
 MODES = ('off', 'read', 'change')
@@ -34,7 +35,6 @@ def assistant(env, i, ctx):
         return {'installed': False, 'next': 'Rekhu Assistant is not installed here. It is on the Odoo Apps store as rekhu_assistant; once installed, the builder can set it up.'}
     Scope = env['rekhu.assistant.scope'].sudo()
     Help = env['rekhu.assistant.help'].sudo()
-    params = env['ir.config_parameter'].sudo()
     if action == 'rules':
         rules = i.get('rules') or {}
         if not isinstance(rules, dict) or not rules:
@@ -67,8 +67,8 @@ def assistant(env, i, ctx):
         return {'topic': topic.id, 'title': topic.name, 'action': 'updated' if existed else 'created'}
     return {
         'installed': True,
-        'enabled': params.get_param('rekhu_assistant.enabled') in ('True', '1', 'true'),
-        'connected': bool(params.get_param('rekhu_assistant.secret_key')),
+        'enabled': settings.get(env, 'rekhu_assistant.enabled') in ('True', '1', 'true'),
+        'connected': bool(settings.get(env, 'rekhu_assistant.secret_key')),
         'rules': [{'model': r.model_name, 'mode': r.mode, 'app': r.app} for r in Scope.search([])],
         'actions': _actions(env),
         'help_topics': Help.search([]).mapped('name'),

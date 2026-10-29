@@ -128,7 +128,9 @@ def sql_read(env, i, ctx):
         try:
             cr.execute('SET TRANSACTION READ ONLY')
             cr.execute('SET LOCAL statement_timeout = 15000')
-            cr.execute(query, tuple(i.get('params') or ()))  # noqa: SQL the transaction is read only and time-limited
+            # without parameters the query goes as written: with an empty tuple the driver would read every % (LIKE '16%') as a placeholder
+            params = tuple(i.get('params') or ())
+            cr.execute(query, params) if params else cr.execute(query)  # noqa: SQL the transaction is read only and time-limited
             columns = [d[0] for d in cr.description or []]
             rows = cr.fetchmany(limit + 1)
         except Exception as error:  # noqa: BLE001 the database's own message is what the builder needs
