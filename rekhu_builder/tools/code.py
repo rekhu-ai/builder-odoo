@@ -42,6 +42,20 @@ def check(full, text=None):
             bad = [str(n + 1) for n, r in enumerate(rows[1:], 1) if r and len(r) != len(need)]
             if bad:
                 return 'ir.model.access.csv lines with the wrong number of columns: %s' % ', '.join(bad)
+        elif name == 'ir.access.csv':
+            # Odoo 20: access rights and record rules in one model; operation is a subset of "crud"
+            rows = list(csv.reader(io.StringIO(text)))
+            head = [c.strip() for c in rows[0]] if rows else []
+            if not head or head[:2] != ['id', 'name'] or 'operation' not in head or not {'model_id', 'model_id:id', 'model_id/id'} & set(head):
+                return 'the first line of ir.access.csv must be: id,name,model_id,group_id/id,operation,domain'
+            bad = [str(n + 1) for n, r in enumerate(rows[1:], 1) if r and len(r) != len(head)]
+            if bad:
+                return 'ir.access.csv lines with the wrong number of columns: %s' % ', '.join(bad)
+            op = head.index('operation')
+            # a selection: the letters in the order c, r, u, d (crud, cru, rd, r …)
+            wrong = [str(n + 1) for n, r in enumerate(rows[1:], 1) if r and (not r[op].strip() or r[op].strip() != ''.join(ch for ch in 'crud' if ch in r[op]))]
+            if wrong:
+                return 'ir.access.csv lines whose operation is not crud or a part of it in that order (cru, rd, r): %s' % ', '.join(wrong)
     except SyntaxError as error:
         return 'Python syntax error, line %s: %s' % (error.lineno, error.msg)
     except ValueError as error:

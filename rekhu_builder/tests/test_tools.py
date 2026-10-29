@@ -1,5 +1,6 @@
 from odoo.tests import TransactionCase, tagged
 
+from ..lib import params as settings
 from ..tools import registry as tools
 
 
@@ -9,8 +10,7 @@ class TestTools(TransactionCase):
 
     def setUp(self):
         super().setUp()
-        self.params = self.env['ir.config_parameter'].sudo()
-        self.params.set_param('rekhu_builder.environment', 'local')
+        settings.put(self.env, 'rekhu_builder.environment', 'local')
 
     def call(self, tool, given=None):
         return tools.run(self.env.registry, tool, given or {}, {'run': 'test-run'}, env=self.env)
@@ -46,6 +46,11 @@ class TestTools(TransactionCase):
         self.assertNotIn('person@example.com', str(out))
         self.assertEqual(out['rows'][0][1], 'kept')
 
+    def test_sql_read_takes_a_like_pattern(self):
+        # a % in the query is part of it when no parameters are given, not a placeholder
+        out = self.call('sql-read', {'sql': "SELECT count(*) AS n FROM res_partner WHERE name LIKE '%'"})
+        self.assertNotIn('error', out)
+
     def test_sql_read_does_not_write(self):
         self.assertIn('error', self.call('sql-read', {'sql': 'DELETE FROM res_partner'}))
         self.assertIn('error', self.call('sql-read', {'sql': 'SELECT 1; DELETE FROM res_partner'}))
@@ -57,13 +62,13 @@ class TestTools(TransactionCase):
         self.assertIn('no tool', self.call('nope')['error'])
 
     def test_production_reads_only(self):
-        self.params.set_param('rekhu_builder.environment', 'production')
+        settings.put(self.env, 'rekhu_builder.environment', 'production')
         self.assertIn('writing is off', self.call('code-write', {'path': 'some_module/x.py', 'content': 'x'})['error'])
         self.assertIn('writing is off', self.call('module-upgrade', {'module': 'rekhu_builder'})['error'])
         self.assertNotIn('error', self.call('context'))
 
     def test_staging_asks_first(self):
-        self.params.set_param('rekhu_builder.environment', 'staging')
+        settings.put(self.env, 'rekhu_builder.environment', 'staging')
         self.assertIn('confirmation_needed', self.call('module-upgrade', {'module': 'base'}))
         self.assertIn('confirmation_needed', self.call('assistant', {'action': 'rules', 'rules': {'res.partner': 'read'}}))
 

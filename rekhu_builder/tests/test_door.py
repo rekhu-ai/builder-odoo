@@ -5,6 +5,7 @@ import time
 
 from odoo.tests import HttpCase, tagged
 
+from ..lib import params as settings
 from ..lib import state
 
 
@@ -14,9 +15,8 @@ class TestDoor(HttpCase):
 
     def setUp(self):
         super().setUp()
-        params = self.env['ir.config_parameter'].sudo()
-        params.set_param('rekhu_builder.key', 'agk_test-customer_odoo-builder_abcdefghijklmnop')
-        params.set_param('rekhu_builder.environment', 'local')
+        settings.put(self.env, 'rekhu_builder.key', 'agk_test-customer_odoo-builder_abcdefghijklmnop')
+        settings.put(self.env, 'rekhu_builder.environment', 'local')
         self.secret = state.secret(self.env)
         # a server with one database finds it by its dbfilter; the test server has several, so the session names it
         self.authenticate(None, None)

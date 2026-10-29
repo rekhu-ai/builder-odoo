@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.6
+
+- **Odoo 20.** The builder works on Odoo 20 and builds for it the Odoo 20 way: access rights in `security/ir.access.csv` (model, group, operation as a part of `crud`, and a domain in the same row) instead of `ir.model.access.csv` and record rules. module-scaffold writes that file, module-check and the file check read it, and the access tool shows `ir.access` on Odoo 20. The 20.0 branch of the module itself converts its own access rights the same way.
+- Settings are read and written with Odoo 20's typed methods (`get_str`, `set_str`) where they exist; the models tool finds a model's parents on Odoo 20, where `_inherit` is no longer on the model's class.
+- sql-read takes a query with a `%` in it (`LIKE '16%'`) when no parameters are given; before, the database driver read the `%` as a placeholder and refused the query.
+
 ## 1.0.5
 
 - **Start free.** The README and the store page say how to begin: [create a Rekhu account](https://rekhu.com/register?ref=builder-odoo) and it starts with $10 credit, no card needed.

@@ -182,8 +182,10 @@ def scaffold(env, i, ctx):
     major = state.odoo_major()
     group = i.get('group') or 'base.group_user'
     files = {}
-    data = ['security/ir.model.access.csv']
-    acl = ['id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink']
+    # Odoo 20 keeps access rights in ir.access (operation "crud"); 17 to 19 in ir.model.access
+    access_file = 'security/ir.access.csv' if major >= 20 else 'security/ir.model.access.csv'
+    data = [access_file]
+    acl = ['id,name,model_id,group_id/id,operation,domain'] if major >= 20 else ['id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink']
     menus = []
     test_lines = []
     built = {m['model']: _model_py(m, m.get('tracking'))[1] for m in models_}
@@ -193,12 +195,12 @@ def scaffold(env, i, ctx):
         files['models/%s.py' % stem] = py
         files['views/%s_views.xml' % stem] = _views_xml(name, m, fields_, major)
         data.append('views/%s_views.xml' % stem)
-        acl.append('access_%s_user,%s user,model_%s,%s,1,1,1,1' % (stem, m['model'], stem, group))
+        acl.append('access_%s_user,%s user,%s,%s,crud,' % (stem, m['model'], m['model'], group) if major >= 20 else 'access_%s_user,%s user,model_%s,%s,1,1,1,1' % (stem, m['model'], stem, group))
         menus.append('    <menuitem id="%s_menu" name="%s" parent="%s_menu_root" action="%s_action" sequence="%d"/>' % (stem, m.get('menu') or _plural(m.get('description') or m['model'].split('.')[-1].capitalize()), name, stem, 10 * (len(menus) + 1)))
         values = _values(fields_, built)
         test_lines += ['    def test_create_%s(self):' % stem, '        record = self.env[%r].create({%s})' % (m['model'], values), '        self.assertTrue(record.exists())', '']
     files['models/__init__.py'] = ''.join('from . import %s\n' % m['model'].replace('.', '_') for m in models_)
-    files['security/ir.model.access.csv'] = '\n'.join(acl) + '\n'
+    files[access_file] = '\n'.join(acl) + '\n'
     if models_:
         files['views/menus.xml'] = '<?xml version="1.0" encoding="utf-8"?>\n<odoo>\n    <menuitem id="%s_menu_root" name="%s" sequence="90"/>\n%s\n</odoo>\n' % (name, i.get('title') or name.replace('_', ' ').title(), '\n'.join(menus))
         data.append('views/menus.xml')
@@ -420,6 +422,13 @@ def check_module(env, i, ctx):
             if f == 'ir.model.access.csv':
                 with open(full, encoding='utf-8') as fh:
                     acl_models |= {r.split(',')[2].strip().split('.')[-1] for r in fh.read().splitlines()[1:] if r.count(',') >= 3}
+            elif f == 'ir.access.csv':
+                # Odoo 20 names the model by its technical name (sale.order) or by the external id of its ir.model record
+                with open(full, encoding='utf-8') as fh:
+                    for r in fh.read().splitlines()[1:]:
+                        if r.count(',') >= 3:
+                            ref = r.split(',')[2].strip()
+                            acl_models.add(ref.split('.')[-1] if ref.split('.')[-1].startswith('model_') else 'model_' + ref.replace('.', '_'))
     # OWL templates and styles are only read by the browser, so their mistakes show nowhere else
     static = os.path.join(root, 'static')
     for folder, dirs, files in os.walk(static):
@@ -447,7 +456,7 @@ def check_module(env, i, ctx):
             problems += ['%s is not imported in %s' % (p, guard.relative(init)) for p in pys if not re.search(r'\b%s\b' % re.escape(p), text)]
     for m in sorted(py_models):
         if 'model_' + m.replace('.', '_') not in acl_models and not _extends(env, m, name):
-            problems.append('the model %s has no line in security/ir.model.access.csv: only the superuser could use it' % m)
+            problems.append('the model %s has no line in security/%s: only the superuser could use it' % (m, 'ir.access.csv' if 'ir.access' in env else 'ir.model.access.csv'))
     return {'module': name, 'version': manifest.get('version'), 'problems': problems, 'ok': not problems}
 
 
