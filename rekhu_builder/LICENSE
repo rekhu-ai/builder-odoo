@@ -1,0 +1,18 @@
+Rekhu Builder for Odoo (rekhu_builder), by Rekhu (Charisma Design, the Netherlands)
+
+This software is licensed, not sold. It is provided to holders of a Rekhu account under the
+Rekhu Terms of Service at https://rekhu.com/terms, which grant a limited, revocable,
+non-exclusive, non-transferable licence to install and run the package in applications
+linked to that account by a valid site key, solely to use the Rekhu services under the account's plan.
+
+The package is a client of the Rekhu platform: it functions only with a valid site key issued by the
+platform, verifies that key with the platform, and performs work only on instructions received through
+the platform. A revoked key stops the package in that application.
+
+You may not copy, modify, distribute, sublicense, host for third parties, reverse engineer, or use the
+package with any server, service, model or backend other than the Rekhu platform, nor remove or
+circumvent the key check, licence verification, metering or security measures, except where mandatory
+law expressly allows. Code, modules, migrations and tests that the agent writes in your application are your own,
+as the Terms describe.
+
+All rights reserved. hello@rekhu.com

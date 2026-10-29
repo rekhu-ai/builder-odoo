@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,operation,domain
+access_rekhu_builder_seen_system,rekhu.builder.seen system,model_rekhu_builder_seen,base.group_system,r,

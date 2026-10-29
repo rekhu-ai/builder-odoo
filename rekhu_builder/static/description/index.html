@@ -1,0 +1,101 @@
+<section class="container py-5">
+    <div class="row justify-content-center text-center">
+        <div class="col-lg-9">
+            <img src="icon.png" alt="Rekhu Builder" width="88" class="mb-3"/>
+            <h1 style="color:#714B67;font-weight:700;">Rekhu Builder</h1>
+            <p class="lead mt-3">The AI agent for Odoo developers. It reads your database as it runs, designs your models with you, and builds, tests and upgrades your custom modules, on a git branch of its own. You work in a chat; every run can be undone.</p>
+            <p class="text-muted">Odoo 17, 18, 19 and 20 · Community and Enterprise</p>
+        </div>
+    </div>
+</section>
+
+<section class="container py-4">
+    <div class="row align-items-center">
+        <div class="col-lg-5">
+            <h2 style="color:#714B67;">Describe it, and it is built</h2>
+            <p>"A module for renting out equipment: equipment with a serial number, a category, a daily price and a state; rentals with dates, and the days and total computed from them." It shows the design in a short table, then writes the module the Odoo way:</p>
+            <ul>
+                <li>Models with their fields and relations, computed fields and constraints.</li>
+                <li>List, form and search views, an action and a menu, and access rights.</li>
+                <li>A test for each model. Then it installs the module and runs the tests.</li>
+                <li>Every file is checked as it is written: Python, XML, the manifest, the access rights.</li>
+            </ul>
+        </div>
+        <div class="col-lg-7">
+            <img src="screenshot_module.jpg" alt="A rental module built by Rekhu Builder: the equipment list and an equipment form with its status bar" class="img-fluid rounded shadow"/>
+        </div>
+    </div>
+</section>
+
+<section class="container py-4">
+    <div class="row align-items-center flex-lg-row-reverse">
+        <div class="col-lg-5">
+            <h2 style="color:#714B67;">It knows the database you run</h2>
+            <p>Before it changes anything, it reads what is there:</p>
+            <ul>
+                <li>The installed modules and where they come from: Odoo, Enterprise, the store or your own.</li>
+                <li>Every model with its fields, and the module that added each field.</li>
+                <li>The relations between models, as a diagram.</li>
+                <li>How a field is used in the data before you redesign it: how many records have it set, and its commonest values.</li>
+                <li>Views and what inherits them, menus, access rights and record rules, scheduled actions that fail, and the log.</li>
+            </ul>
+            <p>Personal fields are masked unless asked for by name. SQL runs read only.</p>
+        </div>
+        <div class="col-lg-7">
+            <img src="screenshot_settings.jpg" alt="The Rekhu Builder settings in Odoo: the key, the connection, and what it may change" class="img-fluid rounded shadow"/>
+        </div>
+    </div>
+</section>
+
+<section class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 style="color:#714B67;" class="text-center mb-4">Safe by default</h2>
+            <table class="table">
+                <thead><tr><th></th><th>Local</th><th>Staging</th><th>Production</th></tr></thead>
+                <tbody>
+                    <tr><td>Reads the database and the code</td><td>yes</td><td>yes</td><td>yes</td></tr>
+                    <tr><td>Changes your custom modules</td><td>yes, on a branch</td><td>after your yes in the chat</td><td>no, it proposes a diff</td></tr>
+                    <tr><td>Installs, upgrades, deletes</td><td>yes</td><td>after your yes</td><td>no</td></tr>
+                </tbody>
+            </table>
+            <ul>
+                <li>It writes only in your custom addons folders, never in Odoo's own modules or Enterprise.</li>
+                <li>With git, every change goes on a branch <code>rekhu/&lt;run&gt;</code>, one commit each, for you to merge. Without git, every file is backed up first.</li>
+                <li>Undo puts a run back: files restored, a module it installed uninstalled, the branch you started from checked out.</li>
+                <li>Tests run in a separate Odoo process on a database of their own, never on yours.</li>
+                <li>Every call from Rekhu is signed with this database's own secret and can be used once.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 style="color:#714B67;" class="text-center mb-4">Works where you develop</h2>
+            <ul>
+                <li><b>A laptop, Docker or a server behind a firewall:</b> run the listener, <code>odoo rekhu_listen -d mydb</code>. It connects out, so nothing has to be opened inbound. If a change stops the database from loading, the listener keeps a repair mode for the files, git, checks, upgrade and undo.</li>
+                <li><b>A server with a public https address:</b> Rekhu calls it directly.</li>
+                <li><b>Odoo Online</b> does not take custom modules, so it can't be used there.</li>
+            </ul>
+            <p>It also sets up <a href="https://apps.odoo.com/apps/modules/19.0/rekhu_assistant">Rekhu Assistant</a> for the people who work in Odoo: where it works, its help topics, and actions of your own.</p>
+        </div>
+    </div>
+</section>
+
+<section class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <h2 style="color:#714B67;" class="text-center mb-4">Get started</h2>
+            <ol>
+                <li><a href="https://rekhu.com/register?ref=builder-odoo">Create a Rekhu account</a>: it starts with <b>$10 credit</b>, no card needed. Add a project of the type <b>Odoo</b>. Under <b>Connection</b>, make a key for Rekhu Builder.</li>
+                <li>Install <b>Rekhu Builder</b> on your development or staging database.</li>
+                <li>Open <b>Settings → Rekhu Builder</b>, paste the key, choose what this database is, and press <b>Connect</b>.</li>
+                <li>On a laptop or in Docker, start the listener. Then talk to the builder in your project chat.</li>
+            </ol>
+            <p>It runs on prepaid credit in your Rekhu account, and a new account starts with $10 of it: no subscription and no fee per user.</p>
+            <p class="text-muted">Questions: <a href="mailto:hello@rekhu.com">hello@rekhu.com</a> · <a href="https://rekhu.com/products/odoo">rekhu.com/products/odoo</a></p>
+        </div>
+    </div>
+</section>
