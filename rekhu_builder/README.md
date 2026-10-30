@@ -33,6 +33,11 @@ Run it as a process or container of its own, beside the server, so a restart of 
 change breaks the loading of the database, the listener keeps working in repair mode: files, git, checks, upgrade and
 undo, enough for the builder to repair its change.
 
+Odoo reads Python only when it starts. After a change to a module's Python the builder restarts the server itself
+(server-restart, after your yes on staging and production). The listener reaches the server on its own port on the
+same machine or pod; when it runs elsewhere, such as in another Docker container, set Settings → Rekhu Builder →
+Server address (http://odoo:8069).
+
 A server with a public https address can be called directly instead (Settings → Rekhu Builder → Connection: Direct).
 It needs a `dbfilter` that opens one database for its address.
 

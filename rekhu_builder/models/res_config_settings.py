@@ -21,6 +21,7 @@ class ResConfigSettings(models.TransientModel):
     rekhu_builder_writes = fields.Selection(WRITES, 'Changes to the modules', config_parameter='rekhu_builder.writes', default='auto')
     rekhu_builder_production_writes = fields.Boolean('Allow changes on production', config_parameter='rekhu_builder.production_writes')
     rekhu_builder_mode = fields.Selection(MODES, 'Connection', config_parameter='rekhu_builder.mode', default='auto')
+    rekhu_builder_server_url = fields.Char('Server address', config_parameter='rekhu_builder.server_url', help='Where the listener reaches this Odoo server to restart it. Empty: the server\'s own port on the same machine or pod, then the web address.')
     rekhu_builder_addons = fields.Char('Folders it may write', config_parameter='rekhu_builder.addons', help='Custom addons folders, separated by commas. Empty: every custom folder of the addons path this server can write.')
 
     rekhu_builder_status = fields.Text('Now', compute='_compute_rekhu_builder_status')

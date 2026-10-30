@@ -581,6 +581,42 @@ def _upgrade_apart(env, name, install, started):
             'next': None if failed else ('the server reloads by itself (--dev=reload)' if dev else 'restart the Odoo server so it runs the new Python')}
 
 
+# the platform waits 110 seconds for one call: the restart and the wait for the server stay inside that
+RESTART_WAIT = 90
+
+
+def restart(env, i, ctx):
+    """The Odoo server restarts so it runs the Python now in the files. Run by the server itself (direct mode) it
+    restarts once this answer is out; run by the listener it asks the server over its signed door and waits until
+    the server answers again from a fresh process."""
+    from ..lib import server  # noqa: PLC0415
+    from . import structure  # noqa: PLC0415
+    if server.inside():
+        needed = structure.restart_needed()
+        server.restart_soon()
+        return {'restarting': True, 'was_behind': needed,
+                'next': 'the server is back in about half a minute; then call context, which says whether the new Python runs (restart_needed false)'}
+    url, before = server.ping(env)
+    if not url:
+        raise Refusal('the Odoo server could not be reached from the listener (tried %s). Set the address the listener reaches it on in Settings → Rekhu Builder → Server address (in Docker the service name, such as http://odoo:8069), or have the server restarted by hand.' % ', '.join(server.addresses(env)))
+    started = time.time()
+    server.call(env, 'POST', server.RESTART, only=url)
+    wait = min(max(int(i.get('wait') or RESTART_WAIT), 10), RESTART_WAIT)
+    while time.time() - started < wait:
+        time.sleep(2)
+        try:
+            _url, now = server.ping(env, only=url)
+        except RuntimeError:
+            now = None
+        # a fresh process loaded the module after the restart was asked for
+        if now and float(now.get('loaded') or 0) >= started:
+            behind = bool(now.get('restart_needed'))
+            return {'restarted': True, 'seconds': round(time.time() - started, 1), 'address': url, 'odoo': now.get('odoo'), 'restart_needed': behind,
+                    'was_behind': bool(before.get('restart_needed')),
+                    'next': 'still behind: a file changed again during the restart; restart once more' if behind else 'the server runs the Python in the files now'}
+    return {'restarted': False, 'address': url, 'error': 'the server did not answer from a fresh process within %d seconds; it may still be starting, or it failed to start: read logs-tail with source odoo, then call context' % wait}
+
+
 def _refresh_assets(env):
     """After an upgrade the browser must get the module's new JavaScript, templates and styles: the compiled bundles are
     dropped and every Odoo process is told to forget the ones it holds, so the next page load builds them afresh."""
