@@ -11,7 +11,7 @@ from odoo import SUPERUSER_ID, api
 
 from ..lib import guard, repair, state, workspace
 from ..lib.guard import Refusal
-from . import assistant, code, data, logs, modules, structure
+from . import actions, assistant, code, data, logs, modules, structure
 
 _logger = logging.getLogger(__name__)
 
@@ -61,6 +61,8 @@ def tools():
             ['name']), False, False, modules.scaffold),
         'module-check': ('Check module', 'Finds what would stop a module from loading, without loading it: Python and XML errors, data files missing from the manifest, folders not imported, dependencies not on the server, models without access rights.', obj({'module': S}, ['module']), True, False, modules.check_module),
         'module-upgrade': ('Install or upgrade', 'Upgrades a custom module so the database matches its files (or installs it, with "install" true). Checked first; a module whose Python changed after the server started is upgraded in a separate Odoo process. On a failure nothing stays half done and the error says the file and line. On staging or production it needs confirmed.', obj({'module': S, 'install': B, 'force': B, 'separate': B, 'confirmed': CONFIRMED}, ['module']), False, True, modules.upgrade),
+        'project-file': ('Bring in a file', 'Attaches a file from the project\'s Files panel in the Rekhu account (its "id" from project-uploads) in this database, so a wizard or a button can use it: an export to import, a price list, a document. Answers the attachment id to give to odoo-call. On staging or production it needs confirmed.', obj({'id': S, 'name': S, 'confirmed': CONFIRMED}, ['id']), False, True, actions.project_file),
+        'odoo-call': ('Run in Odoo', 'Calls one public method of one model, the way a button in Odoo does, as the superuser: on records by "ids", or on a record made first from "values" (a wizard: its fields, a file as {"attachment": id} from project-file, base64 as most wizards take it, or {"attachment": id, "raw": true} for a field that reads the bytes as they are, such as base_import.import\'s file). "args", "kwargs" and "context" are passed on. Answers what the method returned and the record\'s fields afterwards, where a wizard writes its report. It changes data, which a run\'s undo does not bring back: run an import as a dry run first, show the report, and do the real run only after the developer\'s yes. Not for modules, settings, users or access rights. On staging or production it needs confirmed.', obj({'model': S, 'method': S, 'ids': {'type': 'array', 'items': I}, 'values': {'type': 'object'}, 'args': {'type': 'array', 'items': {}}, 'kwargs': {'type': 'object'}, 'context': {'type': 'object'}, 'confirmed': CONFIRMED}, ['model', 'method']), False, True, actions.call),
         'server-restart': ('Restart Odoo', 'Restarts the Odoo server so it runs the Python now in the files: needed after module-upgrade answers restart_needed, and when context says the server must restart. Odoo\'s own restart: the same database and settings, open pages reconnect, the server is away for a few seconds to half a minute. Waits until the server answers from a fresh process (at most "wait" seconds, default 90). On staging or production it needs confirmed: say the server is briefly unavailable to everyone using it.', obj({'wait': I, 'confirmed': CONFIRMED}), False, True, modules.restart),
         'tests-run': ('Run tests', 'Runs a module\'s tests in a separate Odoo process on a database of their own (<database>_rekhu_test), never on this one. "tags" overrides the test tags (default /module). It starts in the background and waits up to "wait" seconds (default 90); when it is still running, call again with its "job" to wait for the result.', obj({'module': S, 'tags': S, 'job': S, 'wait': I}), True, False, modules.tests),
         'git': ('Git', 'The custom addons repositories, or the one of "module": "status", "diff" (against HEAD), "log" (recent commits) or "branches".', obj({'action': {'type': 'string', 'enum': ['status', 'diff', 'log', 'branches']}, 'module': S}), True, False, modules.git),
@@ -72,7 +74,7 @@ def tools():
 # changes that need the developer's yes outside a local database, on top of the destructive tools
 CONFIRM_ACTIONS = {'assistant': lambda i: (i.get('action') or 'status') != 'status'}
 # changes that need writing to be allowed in this database
-WRITES = {'code-write', 'code-patch', 'code-delete', 'module-scaffold', 'module-upgrade', 'rollback'}
+WRITES = {'code-write', 'code-patch', 'code-delete', 'module-scaffold', 'module-upgrade', 'rollback', 'project-file', 'odoo-call'}
 
 
 def definitions():
