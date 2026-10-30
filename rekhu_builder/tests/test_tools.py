@@ -86,6 +86,39 @@ class TestTools(TransactionCase):
         self.assertEqual(len(found), len(set(found)))
         self.assertTrue(any(url.startswith('http://127.0.0.1:') for url in found))
 
+    def test_a_call_runs_a_public_method_on_a_record_made_from_values(self):
+        out = self.call('odoo-call', {'model': 'res.partner', 'method': 'action_archive', 'values': {'name': 'Rekhu Call Test'}})
+        self.assertNotIn('error', out)
+        partner = self.env['res.partner'].with_context(active_test=False).browse(out['ids'])
+        self.assertEqual(partner.name, 'Rekhu Call Test')
+        self.assertFalse(partner.active)
+        self.assertEqual(out['records'][0]['name'], 'Rekhu Call Test')
+
+    def test_a_file_attachment_goes_into_a_binary_field(self):
+        import base64
+        attachment = self.env['ir.attachment'].create({'name': 'list.csv', 'datas': base64.b64encode(b'a,b\n1,2\n')})
+        out = self.call('odoo-call', {'model': 'res.partner', 'method': 'exists', 'values': {'name': 'With a file', 'image_1920': {'attachment': attachment.id}}})
+        self.assertIn('error', out)  # not an image: Odoo refuses it, and the builder reads why
+        missing = self.call('odoo-call', {'model': 'res.partner', 'method': 'exists', 'values': {'name': 'x', 'image_1920': {'attachment': 999999999}}})
+        self.assertIn('project-file first', missing['error'])
+
+    def test_calls_stay_away_from_modules_settings_users_and_private_methods(self):
+        self.assertIn('module-upgrade', self.call('odoo-call', {'model': 'ir.module.module', 'method': 'button_immediate_install', 'ids': [1]})['error'])
+        self.assertIn('not changed through a call', self.call('odoo-call', {'model': 'res.users', 'method': 'write', 'ids': [2], 'args': [{'name': 'x'}]})['error'])
+        self.assertIn('cannot be called', self.call('odoo-call', {'model': 'res.partner', 'method': '_compute_display_name'})['error'])
+        self.assertIn('cannot be called', self.call('odoo-call', {'model': 'res.partner', 'method': 'unlink', 'ids': [1]})['error'])
+        self.assertIn('no method', self.call('odoo-call', {'model': 'res.partner', 'method': 'no_such_method'})['error'])
+
+    def test_calls_and_files_ask_first_and_stay_off_where_writing_is_off(self):
+        settings.put(self.env, 'rekhu_builder.environment', 'staging')
+        self.assertIn('confirmation_needed', self.call('odoo-call', {'model': 'res.partner', 'method': 'exists'}))
+        self.assertIn('confirmation_needed', self.call('project-file', {'id': '00000000-0000-0000-0000-000000000000'}))
+        settings.put(self.env, 'rekhu_builder.environment', 'production')
+        self.assertIn('writing is off', self.call('odoo-call', {'model': 'res.partner', 'method': 'exists'})['error'])
+
+    def test_a_file_needs_the_id_from_the_project_files(self):
+        self.assertIn('project-uploads', self.call('project-file', {'id': 'not-an-id'})['error'])
+
     def test_its_own_modules_are_not_upgraded(self):
         self.assertIn("Rekhu's own module", self.call('module-upgrade', {'module': 'rekhu_builder'})['error'])
 

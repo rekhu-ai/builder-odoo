@@ -48,6 +48,7 @@ It needs a `dbfilter` that opens one database for its address.
 | Reads | yes | yes | yes |
 | Changes the custom modules | yes, on a branch | after your yes in the chat | no, it proposes a diff; unless you allow changes |
 | Upgrades, deletes, uninstalls | yes | after your yes | no |
+| Runs a wizard or a button with your data (an import) | yes | after your yes, a dry run first | no; unless you allow changes |
 
 - It only ever writes in the custom addons folders: never Odoo's own modules, Enterprise, or itself. Name the folders in the settings, or it takes every custom folder this server can write.
 - With git, every change goes on a branch `rekhu/<run>`, one commit per change, and you merge. Without git, every file is backed up before it changes.
