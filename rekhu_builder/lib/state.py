@@ -11,7 +11,7 @@ from odoo import release
 
 from . import params as settings
 
-VERSION = '1.0.6'
+VERSION = '1.0.7'
 KEY = re.compile(r'^agk_([a-z0-9-]+)_([a-z0-9-]+)_[A-Za-z0-9_-]+$')
 PARAM = 'rekhu_builder.'
 ROUTE = '/rekhu/builder/run'

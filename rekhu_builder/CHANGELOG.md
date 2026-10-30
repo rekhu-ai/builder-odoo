@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+- **Restart Odoo from the chat.** A new tool, server-restart, restarts the Odoo server when new Python must be loaded, after module-upgrade says the server must restart. It is Odoo's own restart: the same database and settings, and open pages reconnect after a few seconds. On staging and production it waits for your yes in the chat, like an upgrade. Through the listener it waits until the server answers again from a fresh process, so the builder knows the new code runs before it goes on.
+- context says whether the server itself runs older Python than its files. Through the listener this came from the listener's own process, which restarts after every upgrade, so a server that still needed a restart could look up to date.
+- A new setting, Server address (Settings → Rekhu Builder → Advanced), for a listener that cannot find the server by itself, such as in Docker (http://odoo:8069). Empty, the listener tries the server's own port on the same machine or pod, then the web address.
+
 ## 1.0.6
 
 - **Odoo 20.** The builder works on Odoo 20 and builds for it the Odoo 20 way: access rights in `security/ir.access.csv` (model, group, operation as a part of `crud`, and a domain in the same row) instead of `ir.model.access.csv` and record rules. module-scaffold writes that file, module-check and the file check read it, and the access tool shows `ir.access` on Odoo 20. The 20.0 branch of the module itself converts its own access rights the same way.
