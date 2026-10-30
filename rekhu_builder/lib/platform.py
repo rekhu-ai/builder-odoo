@@ -78,3 +78,12 @@ def next_call(env, wait=25):
 def answer(env, call_id, result):
     """POST /v1/relay/<id>/result: the answer to a call this database took."""
     _check(requests.post(state.platform(env) + '/v1/relay/%d/result' % int(call_id), headers=_headers(env), json={'result': result}, timeout=30))
+
+
+def download(env, file_id, timeout=120):
+    """GET /v1/templates/<id>/download: a file from the project's Files panel in the Rekhu account, as bytes, with
+    the name it has there."""
+    response = _check(requests.get(state.platform(env) + '/v1/templates/%s/download' % file_id, headers=_headers(env), timeout=timeout))
+    disposition = response.headers.get('content-disposition', '')
+    name = disposition.split('filename="', 1)[1].rstrip('"') if 'filename="' in disposition else None
+    return response.content, name
