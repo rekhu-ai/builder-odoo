@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.8
+
+- **The builder runs imports itself.** Two new tools: project-file brings a file from the project's Files panel in the Rekhu account into Odoo as an attachment, and odoo-call calls one method of one model the way a button does, on a record made first from its values (a wizard, with that file) or on records by id. The builder makes an import wizard, gives it the file and presses its button, instead of sending you through the clicks.
+- An import always goes as a dry run first: the builder asks, runs it, shows the wizard's report, and runs the real import only after a second yes. On staging and production every call waits for your yes; on production it stays off unless changes are allowed there. Data an import brought in is not part of a run's undo, which is why the dry run comes first.
+- Calls stay away from modules (module-upgrade does those), settings, users and access rights, and from private methods and deleting records.
+
 ## 1.0.7
 
 - **Restart Odoo from the chat.** A new tool, server-restart, restarts the Odoo server when new Python must be loaded, after module-upgrade says the server must restart. It is Odoo's own restart: the same database and settings, and open pages reconnect after a few seconds. On staging and production it waits for your yes in the chat, like an upgrade. Through the listener it waits until the server answers again from a fresh process, so the builder knows the new code runs before it goes on.
