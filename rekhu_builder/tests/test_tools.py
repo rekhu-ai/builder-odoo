@@ -72,6 +72,20 @@ class TestTools(TransactionCase):
         self.assertIn('confirmation_needed', self.call('module-upgrade', {'module': 'base'}))
         self.assertIn('confirmation_needed', self.call('assistant', {'action': 'rules', 'rules': {'res.partner': 'read'}}))
 
+    def test_restart_asks_first_outside_local(self):
+        # never a real restart in a test: only the answer before it
+        settings.put(self.env, 'rekhu_builder.environment', 'staging')
+        self.assertIn('confirmation_needed', self.call('server-restart'))
+
+    def test_server_addresses_start_with_the_setting(self):
+        from ..lib import server
+        settings.put(self.env, 'rekhu_builder.server_url', 'http://odoo:8069/')
+        settings.put(self.env, 'web.base.url', 'http://odoo:8069')
+        found = server.addresses(self.env)
+        self.assertEqual(found[0], 'http://odoo:8069')
+        self.assertEqual(len(found), len(set(found)))
+        self.assertTrue(any(url.startswith('http://127.0.0.1:') for url in found))
+
     def test_its_own_modules_are_not_upgraded(self):
         self.assertIn("Rekhu's own module", self.call('module-upgrade', {'module': 'rekhu_builder'})['error'])
 

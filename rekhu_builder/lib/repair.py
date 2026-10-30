@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from .guard import Refusal
 
 # the tools that work without the ORM
-TOOLS = {'context', 'code-list', 'code-read', 'code-search', 'code-write', 'code-patch', 'code-delete', 'module-check', 'module-upgrade', 'git', 'rollback', 'logs-tail', 'logs-search'}
+TOOLS = {'context', 'code-list', 'code-read', 'code-search', 'code-write', 'code-patch', 'code-delete', 'module-check', 'module-upgrade', 'server-restart', 'git', 'rollback', 'logs-tail', 'logs-search'}
 
 
 class _Params:

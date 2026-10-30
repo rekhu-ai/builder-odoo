@@ -1,7 +1,8 @@
 """The platform's door in direct mode:
 
-    POST /rekhu/builder/run     one tool call: {"tool", "input", "run", "user", "nonce"}
-    GET  /rekhu/builder/ping    whether the database is connected, signed the same way
+    POST /rekhu/builder/run       one tool call: {"tool", "input", "run", "user", "nonce"}
+    GET  /rekhu/builder/ping      whether the database is connected and the server's Python is behind its files
+    POST /rekhu/builder/restart   the server restarts to load new Python (the listener's server-restart), signed the same way
 
 Every call is signed with the database's own secret over the time, the method, the route and the exact body (the
 scheme of the WordPress plugin and the Laravel package), is refused outside a five-minute window, and is refused when
@@ -16,8 +17,9 @@ import time
 from odoo import SUPERUSER_ID, api, http
 from odoo.http import request
 
-from ..lib import state
+from ..lib import server, state
 from ..tools import registry as tools
+from ..tools import structure
 
 SIGNATURE = re.compile(r'^sha256=[a-f0-9]{64}$')
 
@@ -78,4 +80,15 @@ class RekhuBuilderController(http.Controller):
         if refused:
             return refused
         from odoo import release  # noqa: PLC0415
-        return _json({'ok': True, 'module': state.VERSION, 'odoo': release.version})
+        return _json({'ok': True, 'module': state.VERSION, 'odoo': release.version, 'restart_needed': structure.restart_needed(), 'loaded': structure.LOADED})
+
+    @http.route(server.RESTART, type='http', auth='none', methods=['POST'], csrf=False, save_session=False, readonly=False)
+    def restart(self, **_kw):
+        env = self._env()
+        if env is None:
+            return _json({'message': 'no database is selected for this address'}, 503)
+        refused = self._verify(env, server.RESTART, request.httprequest.get_data())
+        if refused:
+            return refused
+        server.restart_soon()
+        return _json({'restarting': True, 'loaded': structure.LOADED})
