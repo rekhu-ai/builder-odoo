@@ -102,7 +102,7 @@ class RekhuListen(Command):
                 say('  ← %s %s · %d ms' % (tool, 'ok' if ok else str(result['error'])[:120], (time.time() - started) * 1000))
                 if once:
                     return
-                if tool in ('module-upgrade', 'rollback') and (result.get('restart_needed') or result.get('apart')):
+                if (tool in ('module-upgrade', 'rollback') and (result.get('restart_needed') or result.get('apart'))) or (tool == 'server-restart' and result.get('restarted')):
                     # the database now runs Python this process has not loaded: start afresh, as --dev=reload does
                     say('  restarting to load the new Python')
                     os.execv(sys.executable, [sys.executable, *sys.argv])

@@ -39,6 +39,9 @@
                         <setting string="Rekhu address" help="Leave as it is, unless Rekhu asks you to change it.">
                             <field name="rekhu_builder_platform"/>
                         </setting>
+                        <setting string="Server address" help="Where the listener reaches this Odoo server to restart it after a change to Python. Empty: the server's own port on the same machine or pod, then the web address. In Docker, the service name, such as http://odoo:8069.">
+                            <field name="rekhu_builder_server_url" placeholder="http://odoo:8069"/>
+                        </setting>
                     </block>
                 </app>
             </xpath>

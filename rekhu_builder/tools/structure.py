@@ -89,7 +89,7 @@ def context(env, i, ctx):
         'rekhu_modules': [r['name'] for r in rekhu],
         'addons_paths': paths,
         'git': git,
-        'restart_needed': restart_needed(),
+        'restart_needed': server_behind(env),
         'assistant': {'installed': bool(assistant), 'version': assistant.latest_version if assistant else None},
         'conventions': conventions(custom),
         'builder': state.VERSION,
@@ -124,6 +124,19 @@ def conventions(custom):
     top = lambda d: max(d, key=d.get) if d else None  # noqa: E731
     return {'licence': top(licences), 'author': top(authors), 'modules_with_tests': '%d of %d' % (tests, len(custom[:40])),
             'version_style': 'series-prefixed (%s.x.y.z)' % release.serie if 4 in versions else 'x.y.z (Odoo adds the series)'}
+
+
+def server_behind(env):
+    """Whether the Odoo server runs older Python than its files. The listener is a process of its own, so it asks the
+    server; None when the server cannot be reached from here (server-restart says where it looked)."""
+    from ..lib import server  # noqa: PLC0415
+    if server.inside():
+        return restart_needed()
+    try:
+        _url, answer = server.call(env, 'GET', server.PING, timeout=3)
+    except RuntimeError:
+        return None
+    return bool(answer.get('restart_needed')) if answer else None
 
 
 def restart_needed():
