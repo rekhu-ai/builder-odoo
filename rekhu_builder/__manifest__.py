@@ -1,7 +1,7 @@
 {
     'name': 'Rekhu Builder',
     'summary': 'An AI agent for Odoo developers: reads the database as it runs, designs and builds your custom modules on a git branch, tests and upgrades them',
-    'version': '20.0.1.0.8',
+    'version': '20.0.1.0.9',
     'category': 'Productivity',
     'author': 'Rekhu',
     'website': 'https://rekhu.com/products/odoo',
