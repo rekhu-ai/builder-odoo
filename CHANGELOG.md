@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.9
+
+- **The version in Settings.** Settings → Rekhu Builder shows the version this database runs, with the Odoo version, at the top of Connection. When the server already holds newer files that the database has not loaded yet, it says which version waits, and that Apps → Rekhu Builder → Upgrade loads it. Before, the version showed only in developer mode, on the module's technical data.
+
 ## 1.0.8
 
 - **The builder runs imports itself.** Two new tools: project-file brings a file from the project's Files panel in the Rekhu account into Odoo as an attachment, and odoo-call calls one method of one model the way a button does, on a record made first from its values (a wizard, with that file) or on records by id. The builder makes an import wizard, gives it the file and presses its button, instead of sending you through the clicks.

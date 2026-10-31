@@ -11,11 +11,26 @@ from odoo import release
 
 from . import params as settings
 
-VERSION = '1.0.8'
+VERSION = '1.0.9'
 KEY = re.compile(r'^agk_([a-z0-9-]+)_([a-z0-9-]+)_[A-Za-z0-9_-]+$')
 PARAM = 'rekhu_builder.'
 ROUTE = '/rekhu/builder/run'
 ENVIRONMENTS = ('local', 'staging', 'production')
+
+
+def short_version(full):
+    """1.0.8 from 20.0.1.0.8: the module's own version without the Odoo series in front."""
+    parts = str(full or '').split('.')
+    return '.'.join(parts[2:]) if len(parts) > 3 else str(full or '')
+
+
+def versions(env, module):
+    """What Settings shows: the version this database runs with the Odoo version, and the version of the files on the
+    server when that differs (Apps → Upgrade loads it), else False."""
+    record = env['ir.module.module'].sudo().search([('name', '=', module)], limit=1)
+    loaded, files = short_version(record.latest_version), short_version(record.installed_version)
+    shown = '%s · Odoo %s' % (loaded or files, release.major_version)
+    return shown, files if files and loaded and files != loaded else False
 
 
 def param(env, name, default=None):
