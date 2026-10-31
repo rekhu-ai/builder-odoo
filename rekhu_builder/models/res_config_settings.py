@@ -25,6 +25,16 @@ class ResConfigSettings(models.TransientModel):
     rekhu_builder_addons = fields.Char('Folders it may write', config_parameter='rekhu_builder.addons', help='Custom addons folders, separated by commas. Empty: every custom folder of the addons path this server can write.')
 
     rekhu_builder_status = fields.Text('Now', compute='_compute_rekhu_builder_status')
+    rekhu_builder_version = fields.Char('Version', compute='_compute_rekhu_builder_version')
+    rekhu_builder_version_note = fields.Char(compute='_compute_rekhu_builder_version')
+
+    def _compute_rekhu_builder_version(self):
+        """The version this database runs, and a note when the server holds a newer one that waits for an upgrade."""
+        shown, waiting = state.versions(self.env, 'rekhu_builder')
+        note = _('Version %s is on the server: Apps → Rekhu Builder → Upgrade loads it.', waiting) if waiting else False
+        for settings in self:
+            settings.rekhu_builder_version = shown
+            settings.rekhu_builder_version_note = note
 
     def _compute_rekhu_builder_status(self):
         env = self.env
