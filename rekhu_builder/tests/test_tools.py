@@ -1,6 +1,7 @@
 from odoo.tests import TransactionCase, tagged
 
 from ..lib import params as settings
+from ..lib import state
 from ..tools import registry as tools
 
 
@@ -20,6 +21,12 @@ class TestTools(TransactionCase):
         self.assertEqual(len(definitions), len(tools.tools()))
         for d in definitions:
             self.assertTrue(d['slug'] and d['description'] and d['input'].get('type') == 'object', d['slug'])
+
+    def test_settings_show_the_version(self):
+        module = self.env['ir.module.module'].search([('name', '=', 'rekhu_builder')])
+        shown = self.env['res.config.settings'].new({}).rekhu_builder_version
+        self.assertTrue(shown.startswith(module.latest_version.split('.', 2)[2] + ' · Odoo '), shown)
+        self.assertEqual(state.short_version('20.0.1.0.8'), '1.0.8')
 
     def test_context_reads_the_database(self):
         out = self.call('context')
